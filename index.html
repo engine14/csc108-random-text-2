@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lazy Literature II</title>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@600;700&display=swap">
+<style>
+/* Layout: white slide, centred content column, thin footer with course label and slide number, after the CSC211 Quarto deck. */
+:root {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f1f3f1;       /* light grey-green fill for inline code and lists */
+  --fg: #111111;
+  --muted: #555555;
+  --line: #cfd8d0;
+  --navy: #14532d;          /* headings, strong, keys: forest green */
+  --blue: #1f7a3f;          /* rules, borders, buttons: green */
+  --blue-soft: #e3f2e7;     /* pale green fill for boxes */
+  --blue-pale: #f1f7f2;     /* code background */
+  --highlight: #e3f2e7;     /* current row highlight: pale green */
+  --amber: #e8553f;         /* the current word and the main action button: coral */
+  --amber-soft: #fde0d9;
+  --green: #1f7a3f;
+  --green-soft: #d9f0de;
+  --red: #ad0000;
+  --red-soft: #fde8e8;
+  --output-bg: #1e293b;
+  --output-fg: #e2e8f0;
+  --output-muted: #94a3b8;
+  --link: #0b5394;
+  --font-heading: "Source Sans 3", "Source Sans Pro", "Nunito", Helvetica, Arial, sans-serif;
+  --font-body: "Nunito", Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 18px; line-height: 1.5; display: flex; flex-direction: column; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--link); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+strong { color: var(--navy); }
+
+
+main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 24px; }
+.slide { width: 100%; max-width: 1100px; margin: 0 auto; }
+@media (min-width: 1100px) { body { font-size: 21px; } }
+@media (min-width: 1500px) { body { font-size: 23px; } .dict, .chip, .bar-row { font-size: 0.95rem; } .editor, .code-hl, .console { font-size: 0.95rem; } }
+.slide[hidden] { display: none; }
+.eyebrow { display: none; }
+h1, h2 { font-family: var(--font-heading); font-weight: 700; color: var(--navy); letter-spacing: normal; line-height: 1.15; text-wrap: balance; margin: 0 0 16px; border-bottom: 2px solid var(--blue); padding-bottom: 0.15em; }
+h1 { font-size: clamp(1.9rem, 5vw, 2.8rem); }
+h2 { font-size: clamp(1.5rem, 3.6vw, 2.3rem); }
+h3 { font-family: var(--font-heading); font-weight: 600; color: var(--navy); font-size: 1.05rem; margin: 0 0 8px; }
+p { margin: 0 0 12px; max-width: 70ch; }
+p.lede { font-size: 1.1rem; }
+.muted { color: var(--muted); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.two > * { min-width: 0; }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.panel { background: transparent; border: 0; padding: 0; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.btn { background: none; color: var(--navy); border: 2px solid var(--blue); border-radius: 4px; padding: 5px 14px; font-weight: 600; font-size: 0.95rem; transition: background 0.15s, color 0.15s; }
+.btn:hover:not(:disabled) { background: var(--blue); color: #fff; }
+.btn.secondary { border-color: var(--line); color: var(--navy); }
+.btn.secondary:hover:not(:disabled) { background: var(--panel-2); color: var(--navy); }
+.btn.warm { border-color: var(--blue); color: var(--blue); }
+.btn.warm:hover:not(:disabled) { background: var(--blue); color: #fff; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+select, input[type="text"], textarea { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; min-width: 0; }
+textarea { width: 100%; resize: vertical; }
+label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; }
+
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+p code, h3 code, li code, label code, .notice code, .exercise code, .muted code, .ok code { color: var(--navy); background: var(--panel-2); padding: 0.05em 0.3em; border-radius: 3px; }
+pre.code { position: relative; background: var(--blue-pale); color: var(--fg); border-left: 4px solid var(--blue); border-radius: 0 6px 6px 0; padding: 1.8em 16px 12px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.5; margin: 0 0 12px; }
+pre.code::before { content: "Python"; position: absolute; top: 0.5em; left: 0.9em; font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--blue); }
+pre.code.plain { padding-top: 12px; }
+pre.code.plain::before { content: none; }
+pre.code .ln { display: block; padding: 0 6px; margin: 0 -6px; border-radius: 3px; }
+pre.code .ln.active { background: var(--highlight); }
+pre.code .kw { color: #14532d; font-weight: 700; } pre.code .fn { color: #14532d; } pre.code .str { color: #9a3412; } pre.code .cm { color: #5e5e5e; }
+.steps { border-left: 4px solid var(--blue); background: var(--blue-pale); border-radius: 0 6px 6px 0; padding: 10px 16px; margin: 0 0 12px; }
+.steps .ln { display: block; padding: 3px 6px; margin: 0 -6px; border-radius: 3px; }
+.steps .ln.sub { padding-left: 1.4em; }
+.steps .ln.active { background: var(--highlight); }
+.steps .ln strong { display: block; margin-bottom: 2px; }
+
+.words { display: flex; flex-wrap: wrap; gap: 6px 8px; font-size: 1.05rem; line-height: 1.5; padding: 10px 12px; background: var(--panel-2); border-radius: 4px; }
+.w { padding: 1px 5px; border-radius: 3px; border: 1px solid transparent; }
+.w.prev { background: var(--blue-soft); border-color: var(--blue); }
+.w.curr { background: var(--amber-soft); border-color: var(--amber); }
+.w.seen { color: var(--muted); }
+.w.empty { font-family: var(--font-mono); font-size: 0.85em; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-top: 10px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1px solid; }
+.legend .l-prev::before { background: var(--blue-soft); border-color: var(--blue); }
+.legend .l-curr::before { background: var(--amber-soft); border-color: var(--amber); }
+
+.dict { font-family: var(--font-mono); font-size: 0.86rem; line-height: 1.7; overflow-x: auto; max-height: 420px; overflow-y: auto; background: var(--panel-2); border-radius: 4px; padding: 8px 10px; }
+.dict .row { white-space: nowrap; padding: 0 4px; border-radius: 3px; }
+.dict .row.hot { background: var(--highlight); }
+.dict .k { color: var(--navy); font-weight: 600; }
+.dict .v { color: var(--fg); }
+.dict .v .new { background: var(--amber); color: #fff; border-radius: 3px; padding: 0 4px; font-weight: 600; }
+.dict .v .pick { background: var(--amber); color: #fff; border-radius: 3px; padding: 0 3px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-mono); font-size: 0.85rem; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--line); background: var(--panel-2); color: var(--navy); }
+.chip.key { border-color: var(--blue); background: var(--blue-soft); cursor: pointer; }
+.chip.key.sel { background: var(--navy); border-color: var(--navy); color: #fff; }
+.chip.key.ok { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+.chip.key.bad { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+.chip.spin { background: var(--highlight); border-color: var(--amber); }
+.chip.picked { background: var(--amber); border-color: var(--amber); color: #fff; }
+.chip.fav { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+
+.output { font-size: 1.05rem; line-height: 1.6; min-height: 3.2em; padding: 12px 14px; border-radius: 4px; background: var(--panel-2); border-left: 4px solid var(--line); }
+.output .last { background: var(--amber-soft); border-radius: 3px; padding: 0 3px; }
+.output .fav { text-decoration: underline; text-decoration-color: var(--green); text-decoration-thickness: 2px; }
+
+.phone { width: 100%; max-width: 320px; margin: 0 auto; border: 2px solid var(--navy); border-radius: 24px; padding: 18px 14px 14px; background: #fff; }
+.phone .bubble { align-self: flex-end; background: var(--blue); color: #fff; border-radius: 14px 14px 3px 14px; padding: 8px 12px; font-size: 0.95rem; max-width: 90%; min-height: 2.2em; word-wrap: break-word; }
+.phone .screen { display: flex; flex-direction: column; gap: 8px; min-height: 120px; justify-content: flex-end; margin-bottom: 10px; }
+.phone .sugg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.phone .sugg button { border: 1px solid var(--line); background: var(--panel-2); border-radius: 4px; padding: 7px 4px; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--navy); }
+.phone .sugg button:empty { visibility: hidden; }
+.phone input { width: 100%; border-radius: 999px; }
+
+.parts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 16px; }
+.parts .box { border: 1px solid var(--line); background: #fff; border-radius: 4px; padding: 14px 16px; min-width: 0; }
+.parts .box h3 { margin-bottom: 6px; }
+.parts .box .small { font-size: 0.9rem; }
+.parts .dict-box { grid-column: 1 / -1; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: 0 4px 4px 0; }
+.parts .dict-box h3, .parts .dict-box strong { color: #9a3412; }
+.parts .dict-box code { background: #fff; }
+@media (max-width: 760px) { .parts { grid-template-columns: 1fr; } }
+.bars { display: grid; gap: 6px; }
+.bar-row { display: grid; grid-template-columns: minmax(80px, 160px) 1fr 80px; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: 0.85rem; }
+.bar-row .track { height: 18px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+.bar-row .fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+.bar-row .pct { text-align: right; font-variant-numeric: tabular-nums; }
+
+.stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.stat div { background: var(--panel-2); border-radius: 4px; padding: 10px; }
+.stat b { display: block; font-family: var(--font-heading); font-size: 1.4rem; font-variant-numeric: tabular-nums; color: var(--navy); }
+.stat span { font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 480px) { .stat { grid-template-columns: 1fr 1fr; } }
+
+.notice { border-left: 4px solid var(--blue); background: var(--blue-soft); padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.exercise { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.error { position: relative; border-left: 4px solid #64748b; background: var(--output-bg); color: var(--output-fg); padding: 1.8em 14px 10px; border-radius: 0 6px 6px 0; margin: 12px 0; font-family: var(--font-mono); font-size: 0.84rem; white-space: pre-wrap; }
+.error::before { content: "Output"; position: absolute; top: 0.5em; left: 0.9em; font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--output-muted); }
+.error code { color: inherit; background: none; padding: 0; }
+.nope { border-left: 4px solid var(--red); background: var(--red-soft); padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.ok { border-left: 4px solid var(--green); background: var(--green-soft); padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.meter { height: 20px; background: var(--panel-2); border-radius: 2px; position: relative; overflow: hidden; margin: 6px 0 4px; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; background: var(--green); transition: width 0.4s ease; }
+.meter .mark { position: absolute; top: 0; bottom: 0; left: 25%; width: 2px; background: var(--navy); opacity: 0.6; }
+.meter-label { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+
+.title-slide { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.4em; }
+.title-slide .deck-title { font-size: clamp(2rem, 5.2vw, 3.4rem); border-bottom: 3px solid var(--blue); padding-bottom: 0.2em; margin-bottom: 0.5em; width: 100%; max-width: 900px; }
+.title-slide .deck-subtitle { color: var(--blue); font-size: clamp(1.2rem, 3vw, 1.9rem); line-height: 1.4; margin: 0 0 0.9em; max-width: none; }
+.title-slide .deck-authors { font-size: clamp(1.2rem, 2.8vw, 1.7rem); line-height: 1.5; margin: 0; max-width: none; }
+.menu-btn { justify-self: start; background: none; border: 0; padding: 6px 4px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.menu-btn span { display: block; width: 24px; height: 3px; border-radius: 2px; background: var(--blue); }
+.menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 20; }
+.menu { position: fixed; top: 0; bottom: 0; left: 0; width: min(360px, 85vw); background: #1f2428; color: #e6e6e6; z-index: 21; display: flex; flex-direction: column; box-shadow: 2px 0 12px rgba(0,0,0,0.3); padding-top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); }
+.menu-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #3a4046; font-weight: 700; font-size: 1rem; }
+.menu-close { background: none; border: 0; color: #cfcfcf; font-size: 1rem; cursor: pointer; }
+.menu-close small { font-size: 0.8rem; margin-left: 4px; }
+.menu-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+.menu-list li { border-bottom: 1px solid #3a4046; }
+.menu-list button { width: 100%; text-align: left; background: none; border: 0; color: #d6d6d6; padding: 12px 18px; font-size: 1rem; cursor: pointer; display: flex; gap: 12px; align-items: baseline; }
+.menu-list button:hover { background: #2a3036; }
+.menu-list li.now button { background: #0f1316; color: #fff; font-weight: 600; }
+.menu-list .num { color: #8a9199; font-variant-numeric: tabular-nums; min-width: 1.6em; font-size: 0.85em; }
+ol.plain { padding-left: 1.2em; } ol.plain li { margin-bottom: 8px; max-width: 70ch; }
+.quiz-input { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.quiz-input input { flex: 1 1 220px; font-family: var(--font-mono); }
+
+footer.nav { position: sticky; bottom: 0; background: var(--bg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 8px; }
+.nav-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+.nav-inner .label { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.load { color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-size: 0.85rem; }
+.nav-inner .right { justify-self: end; display: flex; align-items: center; gap: 6px; }
+.nav-inner .counter { font-variant-numeric: tabular-nums; margin-left: 6px; }
+.arrow { background: none; border: 0; color: var(--blue); font-size: 0.9rem; padding: 4px 6px; border-radius: 3px; }
+.arrow:hover:not(:disabled) { background: var(--panel-2); }
+.arrow:disabled { opacity: 0.3; cursor: default; }
+@media (max-width: 600px) { .nav-inner .label { display: none; } }
+
+.code-wrap { position: relative; background: var(--blue-pale); border-left: 4px solid var(--blue); border-radius: 0 6px 6px 0; }
+.editor, .code-hl { font-family: var(--font-mono); font-size: 0.9rem; line-height: 1.5; tab-size: 4; white-space: pre; padding: 12px 14px; margin: 0; border: 0; box-sizing: border-box; }
+.editor { position: relative; display: block; width: 100%; min-height: 240px; overflow: auto; background: transparent; color: transparent; caret-color: var(--fg); resize: vertical; z-index: 1; }
+.editor::selection { background: rgba(31, 122, 63, 0.25); }
+.code-hl { position: absolute; inset: 0; overflow: hidden; color: var(--fg); pointer-events: none; }
+.code-hl .kw { color: var(--navy); font-weight: 700; }
+.code-hl .bi { color: #6b21a8; }
+.code-hl .fn { color: #0e7490; font-weight: 600; }
+.code-hl .st { color: #9a3412; }
+.code-hl .cm { color: #6b7280; font-style: italic; }
+.code-hl .nu { color: #b45309; }
+.code-hl .op { color: #374151; }
+.console { position: relative; background: var(--output-bg); color: var(--output-fg); border-left: 4px solid #64748b; border-radius: 0 6px 6px 0; padding: 1.8em 14px 12px; font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; min-height: 90px; max-height: 320px; overflow: auto; margin: 0 0 12px; }
+.console::before { content: "Output"; position: absolute; top: 0.5em; left: 0.9em; font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--output-muted); }
+.console .err { color: #fca5a5; }
+.console .dim { color: var(--output-muted); }
+.tests { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px; margin: 0 0 12px; }
+.test { padding: 8px 12px; border-radius: 0 4px 4px 0; border-left: 4px solid var(--line); background: var(--panel-2); font-size: 0.95rem; }
+.test.pass { border-left-color: var(--green); background: var(--green-soft); }
+.test.fail { border-left-color: var(--red); background: var(--red-soft); }
+.test .mono { display: block; margin-top: 4px; color: var(--muted); font-size: 0.8rem; white-space: pre-wrap; }
+.files { font-size: 0.85rem; color: var(--muted); margin-left: auto; }
+.toolbar .load { white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<input type="file" id="corpus-files" accept=".txt,text/plain" multiple hidden>
+
+<main>
+
+<!-- 0. Title -->
+<section class="slide title-slide" id="s-title">
+  <h1 class="deck-title">Design Example: Random Text Generator, Part 2</h1>
+  <p class="deck-subtitle">CSC108H5: Introduction to Computer Programming<br><span style="font-size:0.85em">Interactive slides</span></p>
+  <p class="deck-authors">Prof. Rutwa Engineer<br>Prof. Romina Piunno<br>Prof. Saba Sadatamin</p>
+</section>
+
+<!-- 1. Motivation -->
+<section class="slide" id="s-why" hidden>
+  <h2>One word of context is not enough</h2>
+  <p>Last class the program remembered only the last word it wrote, so the text wandered after a few words. If it remembers the last three words, it picks words that fit the ones before them. Press Generate and compare.</p>
+  <div class="toolbar">
+    <label class="inline">Text <select id="why-corpus"></select></label>
+    <button class="btn warm" id="why-run">Generate</button>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Remembering 1 word</h3>
+      <div class="output" id="why-out1"><span class="muted">Press Generate.</span></div>
+    </div>
+    <div>
+      <h3>Remembering 3 words</h3>
+      <div class="output" id="why-out3"><span class="muted">Press Generate.</span></div>
+    </div>
+  </div>
+  <div class="notice" style="margin-top:16px">The words we use as context are called a <strong>gram</strong>. Last class the key was a 1-gram. Today the key is a 3-gram: the last three words.</div>
+</section>
+
+<!-- 2. Example -->
+<section class="slide" id="s-example" hidden>
+  <h2>Building 3-gram keys</h2>
+  <div class="two">
+    <div>
+      <pre class="code plain" id="ex-text" style="font-size:1.05rem">The rain in Spain falls mainly on the plain.
+It rarely rains on the beach, where the sand is dry.</pre>
+      <p class="muted small" style="margin:0 0 10px">For this example, punctuation and capitals have been removed. Think about how that changes the results.</p>
+      <div class="words" id="ex-words" style="display:block;font-size:1.15rem;line-height:1.9"></div>
+      <div class="legend"><span class="l-prev">the three context words (the key)</span><span class="l-curr">the word that came after them</span></div>
+      <div class="toolbar" style="margin-top:12px"><button class="btn" id="ex-next">Next</button><button class="btn secondary" id="ex-run">Run all</button><button class="btn secondary" id="ex-reset">Start over</button></div>
+      <p id="ex-note"></p>
+    </div>
+    <div>
+      <h3>The dictionary</h3>
+      <div class="dict" id="ex-dict"></div>
+      <p class="muted" style="margin-top:10px">The key is a tuple of three words. Before any word is read, the context is three empty strings.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2b. Check yourself -->
+<section class="slide" id="s-quiz" hidden>
+  <h2>Check yourself: which key does the word go under?</h2>
+  <div class="two">
+    <div>
+      <p>When the program reads the highlighted word, it appends that word to a list in the dictionary. The highlighted word is the <strong>value</strong>. Click the <strong>key</strong> it goes under: the three words that come before it, oldest first.</p>
+      <div class="words" id="q3-words" style="display:block;font-size:1.1rem;line-height:1.9"></div>
+      <div class="legend"><span class="l-curr">the value: the word being added</span></div>
+      <p id="q3-prompt" style="margin:12px 0 8px"></p>
+      <div class="chips" id="q3-options" style="flex-direction:column;align-items:flex-start;gap:8px"></div>
+      <div id="q3-feedback"></div>
+      <div class="toolbar" style="margin-top:10px"><button class="btn" id="q3-next">Another word</button><span class="muted mono" id="q3-score">0 of 0 correct</span></div>
+    </div>
+    <div>
+      <div class="toolbar"><button class="btn secondary" id="q3-reveal" disabled title="Try at least three words first">Reveal the whole dictionary</button></div>
+      <div class="dict" id="q3-dict" hidden></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Tuples -->
+<section class="slide" id="s-tuples" hidden>
+  <h2>Why a tuple and not a list?</h2>
+  <p>Dictionary keys must be values that cannot change. A list can change, so Python refuses it as a key. A tuple cannot change, so it works. Run the code and read the error, then fix it.</p>
+  <div class="code-wrap"><pre class="code-hl" id="tk-hl" aria-hidden="true"></pre><textarea class="editor" id="tk-code" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:150px"></textarea></div>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="btn" id="tk-run">Run</button>
+    <button class="btn secondary" id="tk-reset">Reset code</button>
+  </div>
+  <div class="console" id="tk-out"><span class="dim">Press Run.</span></div>
+</section>
+
+<!-- 3b. setdefault -->
+<section class="slide" id="s-setdefault" hidden>
+  <h2>A new dictionary method called setdefault</h2>
+  <div class="two">
+    <div>
+      <p>Last class, adding a word to a key's list took two steps, because the list might not exist yet.</p>
+      <pre class="code"><span class="ln"><span class="kw">if</span> key <span class="kw">not in</span> d:</span><span class="ln">    d[key] = []</span><span class="ln">d[key].append(value)</span></pre>
+      <p><code>d.setdefault(key, default)</code> does the first two lines in one call. If <code>key</code> is already in <code>d</code>, it returns <code>d[key]</code>. If it is not, it stores <code>d[key] = default</code> first, then returns it. Either way you get back the list that is inside the dictionary, so you can append to it right away.</p>
+      <pre class="code"><span class="ln">d.setdefault(key, []).append(value)</span></pre>
+      <div class="notice">The two versions do exactly the same thing. Use whichever you find clearer. <code>associate_pair</code> in today's starter code uses <code>setdefault</code>.</div>
+    </div>
+    <div>
+      <p>Try it. Predict what each <code>print</code> shows before you press Run.</p>
+      <div class="code-wrap"><pre class="code-hl" id="sd-hl" aria-hidden="true"></pre><textarea class="editor" id="sd-code" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:230px"></textarea></div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn" id="sd-run">Run</button>
+        <button class="btn secondary" id="sd-reset">Reset code</button>
+      </div>
+      <div class="console" id="sd-out"><span class="dim">Press Run.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Task 1a -->
+<section class="slide" id="s-task1" hidden>
+  <h2>Task 1: make_dictionary with 3-gram keys</h2>
+  <p>Update <code>make_dictionary</code> from last class so that each key is a tuple of the last three words. The helper functions <code>random_element</code> and <code>associate_pair</code> are given. Before the first word, the context is <code>('', '', '')</code>.</p>
+  <div class="code-wrap"><pre class="code-hl" id="p1-hl" aria-hidden="true"></pre><textarea class="editor" id="p1-code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="btn" id="p1-run">Run</button>
+    <button class="btn warm" id="p1-check">Check</button>
+    <button class="btn secondary" id="p1-reset">Reset code</button>
+    <span class="files" data-files="all" id="p1-files"></span> <label for="corpus-files" class="load">Load more files</label>
+  </div>
+  <div class="console" id="p1-out"><span class="dim">Press Run to run your code, or Check to test it.</span></div>
+  <div class="tests" id="p1-tests"></div>
+</section>
+
+<!-- 5. Task 1b -->
+<section class="slide" id="s-task2" hidden>
+  <h2>Task 1: mimic_text with 3-gram keys</h2>
+  <p>Update <code>mimic_text</code> so the context is a tuple of the last three words. Start from a random key. If the context is ever not in the dictionary, start again from another random key. The helper <code>random_element</code> is given, and the 3-gram <code>make_dictionary</code> from Task 1 is already available.</p>
+  <div class="code-wrap"><pre class="code-hl" id="p2-hl" aria-hidden="true"></pre><textarea class="editor" id="p2-code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="btn" id="p2-run">Run</button>
+    <button class="btn warm" id="p2-check">Check</button>
+    <button class="btn secondary" id="p2-reset">Reset code</button>
+    <span class="files" data-files="large" id="p2-files"></span> <label for="corpus-files" class="load">Load more files</label>
+  </div>
+  <div class="console" id="p2-out"><span class="dim">Press Run to run your code, or Check to test it.</span></div>
+  <div class="tests" id="p2-tests"></div>
+</section>
+
+<!-- 6. Task 2 -->
+<section class="slide" id="s-task3" hidden>
+  <h2>Task 2: remove the punctuation</h2>
+  <p>Write <code>clean_word</code> so it returns the word in lowercase with any punctuation removed, then use it inside <code>make_dictionary</code>. Compare the generated text with what you got in Task 1. Both <code>mimic_text</code> and the 3-gram <code>make_dictionary</code> from Task 1 are available if you need them.</p>
+  <div class="code-wrap"><pre class="code-hl" id="p3-hl" aria-hidden="true"></pre><textarea class="editor" id="p3-code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="btn" id="p3-run">Run</button>
+    <button class="btn warm" id="p3-check">Check</button>
+    <button class="btn secondary" id="p3-reset">Reset code</button>
+    <span class="files" data-files="all" id="p3-files"></span> <label for="corpus-files" class="load">Load more files</label>
+  </div>
+  <div class="console" id="p3-out"><span class="dim">Press Run to run your code, or Check to test it.</span></div>
+  <div class="tests" id="p3-tests"></div>
+</section>
+
+<!-- 7. Extra practice -->
+<section class="slide" id="s-wrap" hidden>
+  <h2>Extra practice</h2>
+  <div class="exercise" style="margin:0">
+    <ol class="plain" style="margin:0">
+      <li>Use more than one source text for your code to learn from.</li>
+      <li>With 1-gram keys we captured every repeated word, for example <code>'Twinkle,': ['twinkle,', 'twinkle,']</code>. With 3-gram keys, repeats are less likely to be captured. Change your logic so the frequency of a next word in the original text still matters when you choose it.</li>
+      <li>How can we use punctuation, especially the period, to improve the generated text?</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<div class="menu-backdrop" id="menu-backdrop" hidden></div>
+<nav class="menu" id="menu" hidden aria-label="Slides">
+  <div class="menu-head"><span>Slides</span><button class="menu-close" id="menu-close" aria-label="Close menu">&#x2715; <small>Close</small></button></div>
+  <ol class="menu-list" id="menu-list"></ol>
+</nav>
+<footer class="nav">
+  <div class="nav-inner">
+    <button class="menu-btn" id="menu-btn" aria-label="Slides menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="label">CSC108 · Week 9: Lazy Lit, Part 2</div>
+    <div class="right">
+      <button class="arrow" id="nav-prev" aria-label="Previous slide">&#9664;</button>
+      <button class="arrow" id="nav-next" aria-label="Next slide">&#9654;</button>
+      <span class="counter" id="counter">1 / 10</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Corpora ----------
+  const TWINKLE = "Twinkle, twinkle, little star,\nhow I wonder what you are?\nUp above the world so high,\nLike a diamond in the sky.\nTwinkle, twinkle, little star,\nhow I wonder what you are?";
+  const RAIN = 'The rain in Spain falls mainly on the plain.\nIt rarely rains on the beach, where the sand is dry.';
+  const RAIN_CLEAN = 'the rain in spain falls mainly on the plain it rarely rains on the beach where the sand is dry';
+  const corpora = {
+    rutwa: { name: 'Three sentences', small: true, text: 'Rutwa played soccer.\nRutwa walked fast.\nRutwa said so.' },
+    sword: { name: 'The sword sentence', small: true, text: 'Did you get the sword from the old man on top of the waterfall?' },
+    twinkle: { name: 'Twinkle, Twinkle', small: true, text: TWINKLE },
+    rain: { name: 'The rain in Spain', small: true, text: RAIN }
+  };
+  function loadSideFile(path, key, name) {
+    if (typeof fetch !== 'function') return;
+    fetch(path).then((r) => (r.ok ? r.text() : Promise.reject(r.status))).then((t) => {
+      if (splitWords(t).length < 50) return;
+      corpora[key] = { name: name, text: t };
+      exposeFile(path, t);
+      refreshCorpusSelects();
+    }).catch(() => { /* not available */ });
+  }
+
+  // ---------- Core logic ----------
+  function splitWords(text) { return text.split(/\s+/).filter(Boolean); }
+  function choice(xs) { return xs[Math.floor(Math.random() * xs.length)]; }
+  const SEP = '\u0001';
+  function makeNgram(words, n) {
+    // Map from a joined context string to the list of next words; keys are tuples of n words, starting from n empty strings.
+    const d = new Map(); let ctx = Array(n).fill('');
+    for (const w of words) { const k = ctx.join(SEP); if (!d.has(k)) d.set(k, []); d.get(k).push(w); ctx = ctx.slice(1).concat([w]); }
+    return d;
+  }
+  function genNgram(d, n, num) {
+    const keys = Array.from(d.keys()); const out = [];
+    let ctx = (n === 1) ? [''] : choice(keys).split(SEP);
+    for (let i = 0; i < num; i++) {
+      let k = ctx.join(SEP);
+      if (!d.has(k)) { ctx = choice(keys).split(SEP); k = ctx.join(SEP); }
+      const w = choice(d.get(k)); out.push(w); ctx = ctx.slice(1).concat([w]);
+    }
+    return out.join(' ');
+  }
+  function tupleLabel(k) { return '(' + k.split(SEP).map((x) => "'" + x + "'").join(', ') + ')'; }
+  function pyStr(x) { return JSON.stringify(x); }
+  function ngramLiteral(d) { return '{' + Array.from(d.entries()).map(([k, v]) => '(' + k.split(SEP).map(pyStr).join(', ') + '): [' + v.map(pyStr).join(', ') + ']').join(', ') + '}'; }
+  function dictToObj(m) { const o = {}; for (const [k, v] of m) o[k] = v; return o; }
+
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  function esc(s) { return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function keyLabel(k) { return k === '' ? "''" : "'" + k + "'"; }
+  function listLabel(xs, opts) {
+    opts = opts || {};
+    return '[' + xs.map((x, i) => {
+      let s = esc("'" + x + "'");
+      if (opts.newIndex === i) s = '<span class="new">' + s + '</span>';
+      if (opts.pickIndex === i) s = '<span class="pick">' + s + '</span>';
+      return s;
+    }).join(', ') + ']';
+  }
+  function renderDict(container, dict, opts) {
+    opts = opts || {};
+    if (dict.size === 0) { container.innerHTML = '<span class="muted">{}</span>'; return; }
+    let html = '{';
+    for (const [k, v] of dict) {
+      const hot = opts.hotKey === k;
+      html += '<div class="row' + (hot ? ' hot' : '') + '"><span class="k">' + esc(keyLabel(k)) + '</span>: <span class="v">' + listLabel(v, hot ? opts : {}) + '</span>,</div>';
+    }
+    html += '}';
+    container.innerHTML = html;
+    if (opts.hotKey !== undefined) {
+      const row = container.querySelector('.row.hot');
+      if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  function fillCorpusSelect(sel, defaultKey, largeOnly) {
+    const prev = sel.value;
+    sel.innerHTML = '';
+    for (const k of Object.keys(corpora)) {
+      if (largeOnly && corpora[k].small) continue;
+      const o = document.createElement('option');
+      o.value = k; o.textContent = corpora[k].name;
+      sel.appendChild(o);
+    }
+    sel.value = (prev && corpora[prev]) ? prev : defaultKey;
+  }
+  const corpusSelects = [];
+  function registerCorpusSelect(sel, defaultKey, onChange, largeOnly) {
+    corpusSelects.push({ sel, defaultKey, largeOnly });
+    fillCorpusSelect(sel, defaultKey, largeOnly);
+    sel.addEventListener('change', onChange);
+  }
+  function refreshCorpusSelects() { for (const c of corpusSelects) fillCorpusSelect(c.sel, c.defaultKey, c.largeOnly); }
+
+
+  function renderNgramDict(container, dict, opts) {
+    opts = opts || {};
+    if (dict.size === 0) { container.innerHTML = '<span class="muted">{}</span>'; return; }
+    let html = '{';
+    for (const [k, v] of dict) {
+      const hot = opts.hotKey === k;
+      html += '<div class="row' + (hot ? ' hot' : '') + '"><span class="k">' + esc(tupleLabel(k)) + '</span>: <span class="v">' + listLabel(v, hot ? opts : {}) + '</span>,</div>';
+    }
+    container.innerHTML = html + '}';
+    const row = container.querySelector('.row.hot'); if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ---------- Slides ----------
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const titles = ['Title', 'More context', '3-gram keys', 'Check yourself', 'Tuples as keys', 'setdefault', 'Task 1: make_dictionary', 'Task 1: mimic_text', 'Task 2: punctuation', 'Extra practice'];
+  let idx = 0;
+  function go(i, fromHash) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => { s.hidden = j !== idx; });
+    $('counter').textContent = (idx + 1) + ' / ' + slides.length;
+    document.title = 'Lazy Literature II';
+    if (window.syncMenu) window.syncMenu();
+    $('nav-prev').disabled = idx === 0;
+    $('nav-next').disabled = idx === slides.length - 1;
+    const name = slides[idx].id.slice(2);
+    if (!fromHash && location.hash !== '#' + name) {
+      try { history.replaceState(null, '', '#' + name); } catch (e) { /* ignore */ }
+    }
+    window.scrollTo(0, 0);
+  }
+  function goFromHash() {
+    const name = location.hash.replace('#', '');
+    const i = slides.findIndex((s) => s.id === 's-' + name);
+    go(i >= 0 ? i : 0, true);
+  }
+  $('nav-prev').addEventListener('click', () => go(idx - 1));
+  $('nav-next').addEventListener('click', () => go(idx + 1));
+  window.addEventListener('hashchange', goFromHash);
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { go(idx + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(idx - 1); e.preventDefault(); }
+  });
+
+
+
+  // ---------- Slides menu (bottom-left) ----------
+  (function menu() {
+    const menuEl = $('menu'), backdrop = $('menu-backdrop'), list = $('menu-list'), btn = $('menu-btn');
+    slides.forEach((sl, i) => {
+      const h = sl.querySelector('h1, h2');
+      const li = document.createElement('li');
+      const b = document.createElement('button'); b.type = 'button';
+      b.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + esc(h ? h.textContent.trim() : titles[i]) + '</span>';
+      b.addEventListener('click', () => { go(i); close(); });
+      li.appendChild(b); list.appendChild(li);
+    });
+    function open() { menuEl.hidden = false; backdrop.hidden = false; btn.setAttribute('aria-expanded', 'true'); sync(); }
+    function close() { menuEl.hidden = true; backdrop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    function sync() { Array.from(list.children).forEach((li, i) => li.classList.toggle('now', i === idx)); }
+    btn.addEventListener('click', () => { if (menuEl.hidden) open(); else close(); });
+    $('menu-close').addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menuEl.hidden) close(); });
+    window.syncMenu = sync;
+  })();
+
+
+  // ---------- 1. Why more context ----------
+  (function why() {
+    const sel = $('why-corpus');
+    $('why-run').addEventListener('click', () => {
+      const words = splitWords(corpora[sel.value].text);
+      $('why-out1').textContent = genNgram(makeNgram(words, 1), 1, 45);
+      $('why-out3').textContent = genNgram(makeNgram(words, 3), 3, 45);
+    });
+    registerCorpusSelect(sel, 'alice', () => {}, true);
+  })();
+
+  // ---------- 2. 3-gram example ----------
+  (function example() {
+    const words = splitWords(RAIN_CLEAN);
+    const wordsEl = $('ex-words'), dictEl = $('ex-dict'), note = $('ex-note'), nextBtn = $('ex-next');
+    let dict = new Map(), i = 0, timer = null;
+    function renderWords() {
+      wordsEl.innerHTML = words.map((w, j) => {
+        let cls = 'w';
+        if (j === i - 1) cls += ' curr';
+        else if (j >= i - 4 && j < i - 1) cls += ' prev';
+        else if (j < i - 4) cls += ' seen';
+        return '<span class="' + cls + '">' + esc(w) + '</span>';
+      }).join(' ');
+    }
+    function reset() { clearInterval(timer); timer = null; dict = new Map(); i = 0; nextBtn.disabled = false; nextBtn.textContent = 'Next'; $('ex-run').disabled = false; renderWords(); renderNgramDict(dictEl, dict); note.textContent = 'Nothing recorded yet. The context starts as three empty strings.'; }
+    function step() {
+      if (i >= words.length) return false;
+      const ctx = [i - 3, i - 2, i - 1].map((j) => (j < 0 ? '' : words[j]));
+      const k = ctx.join(SEP), w = words[i];
+      if (!dict.has(k)) dict.set(k, []);
+      dict.get(k).push(w); i++;
+      renderWords(); renderNgramDict(dictEl, dict, { hotKey: k, newIndex: dict.get(k).length - 1 });
+      const n = dict.get(k).length;
+      note.innerHTML = '<code>' + esc(w) + '</code> came after <code>' + esc(tupleLabel(k)) + '</code>, so it goes in the list for that key' + (n > 1 ? ', which now has ' + n + ' words' : '') + '.';
+      if (i >= words.length) { nextBtn.textContent = 'Start again'; $('ex-run').disabled = true; note.innerHTML += ' <strong>Done.</strong> Almost every key has exactly one word in its list. With 3-gram keys the text is copied in longer pieces, and repeats are rarer.'; return false; }
+      return true;
+    }
+    nextBtn.addEventListener('click', () => { clearInterval(timer); timer = null; if (i >= words.length) { reset(); return; } step(); });
+    $('ex-run').addEventListener('click', () => { if (timer) return; timer = setInterval(() => { if (!step()) { clearInterval(timer); timer = null; } }, 450); });
+    $('ex-reset').addEventListener('click', reset);
+    reset();
+  })();
+
+
+  // ---------- 2b. Check yourself: 3-gram keys ----------
+  (function quiz3() {
+    const words = splitWords(TWINKLE);
+    const lines = TWINKLE.split('\n').map((l) => splitWords(l));
+    const dict = makeNgram(words, 3);
+    const wordsEl = $('q3-words'), opts = $('q3-options'), fb = $('q3-feedback'), score = $('q3-score'), reveal = $('q3-reveal');
+    let target = -1, tried = 0, correct = 0, answered = false;
+    function render() {
+      let j = 0;
+      wordsEl.innerHTML = lines.map((line) => '<div>' + line.map((w) => { const cls = 'w' + (j === target ? ' curr' : ''); j++; return '<span class="' + cls + '">' + esc(w) + '</span>'; }).join(' ') + '</div>').join('');
+    }
+    function at(j) { return j < 0 || j >= words.length ? '' : words[j]; }
+    function keyAt(i) { return [at(i - 3), at(i - 2), at(i - 1)]; }
+    function label(k) { return '(' + k.map((x) => "'" + x + "'").join(', ') + ')'; }
+    function pick() {
+      let t; do { t = Math.floor(Math.random() * words.length); } while (t === target && words.length > 1);
+      target = t; answered = false; fb.innerHTML = ''; render();
+      $('q3-prompt').innerHTML = 'word_dict[ <strong>?</strong> ] gets <code>' + esc(words[target]) + '</code> appended. Which key is it?';
+      const right = keyAt(target);
+      const cands = [
+        { k: right, why: '' },
+        { k: [at(target - 2), at(target - 1), at(target)], why: 'That key includes the word itself. The key is only the words before it.' },
+        { k: right.slice().reverse(), why: 'Right words, wrong order. The oldest word comes first.' },
+        { k: keyAt(target - 1), why: 'That is the key for the word before this one. Slide the window one word to the right.' },
+        { k: [at(target - 1), at(target), at(target + 1)], why: 'Those are the words around it, not the three before it.' }
+      ];
+      const seen = new Set(); const options = [];
+      for (const c of cands) { const id = c.k.join(SEP); if (!seen.has(id)) { seen.add(id); options.push(c); } if (options.length === 4) break; }
+      for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [options[i], options[j]] = [options[j], options[i]]; }
+      opts.innerHTML = '';
+      options.forEach((c) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'chip key'; b.style.fontSize = '1rem'; b.textContent = label(c.k);
+        b.addEventListener('click', () => {
+          if (answered) return;
+          answered = true; tried++;
+          const ok = c.k.join(SEP) === right.join(SEP);
+          if (ok) { correct++; b.classList.add('ok'); fb.innerHTML = '<div class="ok">Correct. <code>' + esc(words[target]) + '</code> is appended to word_dict[<code>' + esc(label(right)) + '</code>].</div>'; }
+          else { b.classList.add('bad'); fb.innerHTML = '<div class="nope">Not quite. ' + esc(c.why) + ' The key is ' + esc(label(right)) + '.</div>'; Array.from(opts.children).forEach((x) => { if (x.textContent === label(right)) x.classList.add('ok'); }); }
+          score.textContent = correct + ' of ' + tried + ' correct';
+          if (tried >= 3) { reveal.disabled = false; reveal.title = ''; }
+        });
+        opts.appendChild(b);
+      });
+    }
+    $('q3-next').addEventListener('click', pick);
+    reveal.addEventListener('click', () => { const d = $('q3-dict'); d.hidden = !d.hidden; renderNgramDict(d, dict); });
+    pick();
+  })();
+
+  // ---------- Files that student Python can open() ----------
+  const pyFiles = new Map();
+  const SMALL_FILES = new Set(['sword.txt', 'twinkle.txt', 'rutwa.txt', 'rain.txt']);
+  function exposeFile(name, text) {
+    if (!text.endsWith('\n')) text += '\n';
+    let el = document.getElementById(name);
+    if (!el) { el = document.createElement('script'); el.type = 'text/plain'; el.id = name; el.hidden = true; document.body.appendChild(el); }
+    el.textContent = text;
+    pyFiles.set(name, text);
+    const all = Array.from(pyFiles.keys());
+    const large = all.filter((n) => !SMALL_FILES.has(n));
+    document.querySelectorAll('.files').forEach((f) => {
+      const list = f.dataset.files === 'large' ? large : all;
+      f.textContent = 'Files you can open: ' + (list.length ? list.join(', ') : 'none loaded yet');
+    });
+  }
+  exposeFile('sword.txt', corpora.sword.text);
+  exposeFile('twinkle.txt', TWINKLE);
+  exposeFile('rutwa.txt', corpora.rutwa.text);
+  exposeFile('rain.txt', RAIN);
+
+  // Provided functions for the later tasks, implemented here rather than as Python on the page.
+  function fileText(arg) {
+    const name = (typeof arg === 'string') ? arg : (arg && arg.name);
+    const text = pyFiles.get(name);
+    if (text === undefined) throw new Sk.builtin.IOError("[Errno 2] No such file or directory: '" + name + "'");
+    return text;
+  }
+  function toPyNgram(d) {
+    const py = new Sk.builtin.dict([]);
+    for (const [k, v] of d) py.mp$ass_subscript(new Sk.builtin.tuple(k.split(SEP).map((x) => new Sk.builtin.str(x))), new Sk.builtin.list(v.map((x) => new Sk.builtin.str(x))));
+    return py;
+  }
+  window.LazyLit = { dict3: function (arg) { return toPyNgram(makeNgram(splitWords(fileText(arg)), 3)); } };
+  window.LazyLit.mimic3 = function (pyDict, num) {
+    const d = new Map();
+    const keysPy = Sk.misceval.callsimArray(pyDict.tp$getattr(new Sk.builtin.str('keys')), []);
+    const it = Sk.abstr.iter(keysPy);
+    for (let k = it.tp$iternext(); k !== undefined; k = it.tp$iternext()) {
+      const kjs = Sk.ffi.remapToJs(k); const key = (Array.isArray(kjs) ? kjs : [String(kjs)]).join(SEP);
+      d.set(key, Sk.ffi.remapToJs(pyDict.mp$subscript(k)));
+    }
+    if (!d.size) throw new Sk.builtin.ValueError('the dictionary is empty');
+    const n = d.keys().next().value.split(SEP).length;
+    return new Sk.builtin.str(genNgram(d, n, Sk.ffi.remapToJs(num)));
+  };
+  if (typeof Sk !== 'undefined' && Sk.builtinFiles && Sk.builtinFiles.files) {
+    Sk.builtinFiles.files['src/lib/typing.js'] = "var $builtinmodule = function (name) { var mod = {}; ['TextIO', 'Any', 'List', 'Dict', 'Tuple', 'Set', 'Optional', 'Union', 'Callable', 'Iterable', 'Sequence'].forEach(function (n) { mod[n] = Sk.builtin.none.none$; }); return mod; };";
+    Sk.builtinFiles.files['src/lib/lazylit.js'] = "var $builtinmodule = function (name) { var mod = {}; mod.make_dictionary = new Sk.builtin.func(function (f) { Sk.builtin.pyCheckArgsLen('make_dictionary', arguments.length, 1, 1); return window.LazyLit.dict3(f instanceof Sk.builtin.str ? Sk.ffi.remapToJs(f) : f); }); mod.mimic_text = new Sk.builtin.func(function (d, n) { Sk.builtin.pyCheckArgsLen('mimic_text', arguments.length, 2, 2); return window.LazyLit.mimic3(d, n); }); mod.random_element = new Sk.builtin.func(function (lst) { Sk.builtin.pyCheckArgsLen('random_element', arguments.length, 1, 1); var n = Sk.ffi.remapToJs(Sk.builtin.len(lst)); if (!n) throw new Sk.builtin.IndexError('random_element: the list is empty'); return Sk.abstr.objectGetItem(lst, new Sk.builtin.int_(Math.floor(Math.random() * n)), false); }); return mod; };";
+  }
+
+  function runPython(code, outEl, lineOffset) {
+    outEl.innerHTML = '';
+    if (typeof Sk === 'undefined') { outEl.innerHTML = '<span class="err">Python could not be loaded in this browser. Check your connection and reload.</span>'; return Promise.reject(new Error('no skulpt')); }
+    let text = '';
+    Sk.configure({ __future__: Sk.python3, execLimit: 15000, output: (t) => { text += t; outEl.textContent = text; outEl.scrollTop = outEl.scrollHeight; }, read: (x) => { if (Sk.builtinFiles && Sk.builtinFiles.files[x] !== undefined) return Sk.builtinFiles.files[x]; throw new Error("File not found: '" + x + "'"); } });
+    return Sk.misceval.asyncToPromise(() => Sk.importMainWithBody('<stdin>', false, code, true)).then(() => text, (e) => {
+      let msg = e.toString();
+      if (lineOffset) msg = msg.replace(/on line (\d+)/g, (m, n) => 'on line ' + (Number(n) - lineOffset));
+      if (msg.indexOf('TimeLimitError') === 0) msg = 'Your program ran for too long and was stopped. Is there a loop that never ends?';
+      const span = document.createElement('span'); span.className = 'err'; span.textContent = (text ? '\n' : '') + msg;
+      outEl.appendChild(span);
+      throw e;
+    });
+  }
+  function pyLiteral(v) { return JSON.stringify(v); } // JSON for dicts of lists of strings is a valid Python literal
+
+
+  // ---------- Python syntax highlighting for the editors ----------
+  const PY_KW = new Set('def return for in if elif else while with as import from not and or is None True False pass break continue lambda class try except finally raise global nonlocal yield del assert'.split(' '));
+  const PY_BI = new Set('print open range len str int float list dict set tuple bool sorted sum min max abs enumerate zip input type isinstance choice append split join strip lower upper keys values items get setdefault read readlines write close'.split(' '));
+  function highlightPython(src) {
+    const re = /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(#[^\n]*)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)|([-+*\/%=<>!:(),\[\]{}.])/g;
+    let out = '', last = 0, m, prevWord = '';
+    while ((m = re.exec(src)) !== null) {
+      out += esc(src.slice(last, m.index));
+      const tok = m[0];
+      if (m[1] !== undefined) out += '<span class="st">' + esc(tok) + '</span>';
+      else if (m[2] !== undefined) out += '<span class="cm">' + esc(tok) + '</span>';
+      else if (m[3] !== undefined) out += '<span class="nu">' + esc(tok) + '</span>';
+      else if (m[4] !== undefined) {
+        if (PY_KW.has(tok)) out += '<span class="kw">' + esc(tok) + '</span>';
+        else if (prevWord === 'def' || prevWord === 'class') out += '<span class="fn">' + esc(tok) + '</span>';
+        else if (PY_BI.has(tok)) out += '<span class="bi">' + esc(tok) + '</span>';
+        else out += esc(tok);
+        prevWord = tok;
+      }
+      else out += '<span class="op">' + esc(tok) + '</span>';
+      if (m[4] === undefined) prevWord = '';
+      last = m.index + tok.length;
+    }
+    out += esc(src.slice(last));
+    return out + '\n';
+  }
+  function attachHighlighter(textarea, pre) {
+    const update = () => { pre.innerHTML = highlightPython(textarea.value); pre.scrollTop = textarea.scrollTop; pre.scrollLeft = textarea.scrollLeft; };
+    textarea.addEventListener('input', update);
+    textarea.addEventListener('scroll', () => { pre.scrollTop = textarea.scrollTop; pre.scrollLeft = textarea.scrollLeft; });
+    update();
+    return update;
+  }
+
+  function setupTask(id, starter, buildHarness, prelude) {
+    prelude = prelude || '';
+    const offset = prelude ? prelude.split('\n').length - 1 : 0;
+    const code = $(id + '-code'), out = $(id + '-out'), tests = $(id + '-tests');
+    let h = 0; for (let i = 0; i < starter.length; i++) h = (h * 31 + starter.charCodeAt(i)) >>> 0;
+    const key = 'lazylit-' + id + '-' + h.toString(36);
+    let saved = null; try { saved = localStorage.getItem(key); } catch (e) { saved = null; }
+    code.value = saved || starter;
+    const rehighlight = attachHighlighter(code, $(id + '-hl'));
+    code.addEventListener('input', () => { try { localStorage.setItem(key, code.value); } catch (e) { /* ignore */ } });
+    code.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') { e.preventDefault(); const st = code.selectionStart, en = code.selectionEnd; code.value = code.value.slice(0, st) + '    ' + code.value.slice(en); code.selectionStart = code.selectionEnd = st + 4; code.dispatchEvent(new Event('input')); }
+      if (e.key === 'Enter') {
+        const st = code.selectionStart; const before = code.value.slice(0, st); const line = before.slice(before.lastIndexOf('\n') + 1);
+        const indent = (line.match(/^ */) || [''])[0] + (line.trimEnd().endsWith(':') ? '    ' : '');
+        e.preventDefault(); code.value = before + '\n' + indent + code.value.slice(code.selectionEnd); code.selectionStart = code.selectionEnd = st + 1 + indent.length; code.dispatchEvent(new Event('input'));
+      }
+    });
+    $(id + '-reset').addEventListener('click', () => { code.value = starter; rehighlight(); try { localStorage.removeItem(key); } catch (e) { /* ignore */ } if (tests) tests.innerHTML = ''; out.innerHTML = '<span class="dim">Code reset.</span>'; });
+    $(id + '-run').addEventListener('click', () => { if (tests) tests.innerHTML = ''; runPython(prelude + code.value, out, offset).then((t) => { if (!t) out.innerHTML = '<span class="dim">Ran with no output. Add a print() to see something.</span>'; }).catch(() => {}); });
+    if ($(id + '-check')) $(id + '-check').addEventListener('click', () => {
+      tests.innerHTML = '';
+      const harness = buildHarness();
+      runPython(prelude + code.value + '\n\n' + harness, out, offset).then((t) => showTests(t)).catch(() => { tests.innerHTML = '<div class="test fail">Your code stopped with an error before the tests could finish. See the output.</div>'; });
+    });
+    function showTests(text) {
+      const lines = text.split('\n').filter((l) => l.startsWith('TEST|'));
+      if (!lines.length) { tests.innerHTML = '<div class="test fail">No test results came back.</div>'; return; }
+      tests.innerHTML = lines.map((l) => { const parts = l.split('|'); const ok = parts[2] === 'PASS'; return '<div class="test ' + (ok ? 'pass' : 'fail') + '">' + (ok ? 'Passed: ' : 'Failed: ') + esc(parts[1]) + (parts[3] ? '<span class="mono">' + esc(parts.slice(3).join('|')) + '</span>' : '') + '</div>'; }).join('');
+      out.textContent = text.split('\n').filter((l) => !l.startsWith('TEST|')).join('\n') || '';
+      if (!out.textContent) out.innerHTML = '<span class="dim">Tests finished. Results are below.</span>';
+    }
+  }
+
+
+  // ---------- Tuples slide ----------
+  setupTask('tk', "H = {}\nH[[1, 2, 3]] = 1   # a list as the key\nprint(H)\n", null);
+
+  setupTask('sd', "d = {}\n\nd.setdefault('a', []).append(1)\nprint(d)\n\nd.setdefault('a', []).append(2)   # 'a' exists now, so no new list\nprint(d)\n\nlst = d.setdefault('b', [])       # 'b' is new: an empty list is stored and returned\nprint(lst)\nprint(d)\n", null);
+
+  // ---------- Task starters ----------
+  const HELPERS = 'from typing import Any, TextIO\nfrom random import choice, randint\n\n\ndef random_element(lst: list[Any]) -> Any:\n    """\n    Return a random element of non-empty <lst>.\n    """\n\n    return lst[randint(0, len(lst) - 1)]\n\n\ndef associate_pair(d: dict, key, value: str) -> None:\n    """\n    Add the <key>-<value> pair to <d>. Keys may need to be\n    associated with multiple values, so values are placed in a list.\n\n    Assumption: key is immutable.\n    """\n\n    d.setdefault(key, []).append(value)\n\n\n';
+  const HELPERS_NO_PAIR = 'from typing import Any, TextIO\nfrom random import choice, randint\n\n\ndef random_element(lst: list[Any]) -> Any:\n    """\n    Return a random element of non-empty <lst>.\n    """\n\n    return lst[randint(0, len(lst) - 1)]\n\n\n';
+  const STARTER_P1 = HELPERS + 'def make_dictionary(f: TextIO) -> dict[tuple[str, str, str], list[str]]:\n    """\n    Return a dictionary where the keys are tuples of length 3\n    containing words in <f> and the value for a key is the\n    list of words that were found to follow the key in <f>.\n    """\n    # Your code here\n\n\n# Try it out:\nwith open(\'sword.txt\') as f:\n    d = make_dictionary(f)\nprint(d)\n';
+  const STARTER_P2 = HELPERS_NO_PAIR + '# The 3-gram make_dictionary from Task 1 is already available here.\n\n\ndef mimic_text(word_dict: dict[tuple[str, str, str], list[str]], num_words: int) -> str:\n    """\n    Based on the word patterns in <word_dict>, return a string of\n    <num_words> words that mimics the text.\n    """\n    # Your code here\n\n\n# Try it out on a whole book:\nwith open(\'alice.txt\') as f:\n    d = make_dictionary(f)\nprint(mimic_text(d, 60))\n';
+  const STARTER_P3 = HELPERS + 'def clean_word(word: str) -> str:\n    """\n    Return <word> in lowercase with all punctuation removed.\n    """\n    # Your code here\n\n\ndef make_dictionary(f: TextIO) -> dict[tuple[str, str, str], list[str]]:\n    """\n    Return a 3-gram dictionary for <f>, cleaning each word first.\n    """\n    # Your code here (start from your Task 1 version)\n\n\n# Try it out:\nprint(clean_word(\'Spain.\'))\nwith open(\'alice.txt\') as f:\n    d = make_dictionary(f)\nprint(mimic_text(d, 60))\n';
+
+  function expected3(text) { return ngramLiteral(makeNgram(splitWords(text), 3)); }
+  function cleanWords(text) { return splitWords(text).map((w) => w.toLowerCase().replace(/[^a-z0-9]/g, '')).filter(Boolean); }
+
+  setupTask('p1', STARTER_P1, () => [
+    "def _check(name, fname, expected):",
+    "    try:",
+    "        with open(fname) as _f:",
+    "            got = make_dictionary(_f)",
+    "    except TypeError as e:",
+    "        print('TEST|' + name + '|FAIL|' + repr(e) + '. Lists cannot be dictionary keys. Use a tuple for the context.'); return",
+    "    except Exception as e:",
+    "        print('TEST|' + name + '|FAIL|Your function raised an error: ' + repr(e)); return",
+    "    if not isinstance(got, dict):",
+    "        print('TEST|' + name + '|FAIL|Expected a dict but got ' + type(got).__name__); return",
+    "    bad = [k for k in got if not (isinstance(k, tuple) and len(k) == 3)]",
+    "    if bad:",
+    "        print('TEST|' + name + '|FAIL|Every key should be a tuple of 3 strings, but found ' + repr(bad[0])); return",
+    "    if got == expected:",
+    "        print('TEST|' + name + '|PASS'); return",
+    "    missing = [k for k in expected if k not in got]",
+    "    extra = [k for k in got if k not in expected]",
+    "    wrong = [k for k in expected if k in got and got[k] != expected[k]]",
+    "    msg = ''",
+    "    if missing: msg += 'Missing keys: ' + repr(missing[:3]) + '. '",
+    "    if extra: msg += 'Unexpected keys: ' + repr(extra[:3]) + '. '",
+    "    if wrong: msg += 'Wrong list for ' + repr(wrong[0]) + ': got ' + repr(got[wrong[0]]) + ', expected ' + repr(expected[wrong[0]]) + '.'",
+    "    print('TEST|' + name + '|FAIL|' + msg)",
+    "_check('three sentences (rutwa.txt)', 'rutwa.txt', " + expected3(corpora.rutwa.text) + ")",
+    "_check('the sword sentence (sword.txt)', 'sword.txt', " + expected3(corpora.sword.text) + ")",
+    "_check('Twinkle, Twinkle (twinkle.txt)', 'twinkle.txt', " + expected3(TWINKLE) + ")"
+  ].join('\n'));
+
+  setupTask('p2', STARTER_P2, () => [
+    "def _valid(d, s, n, name):",
+    "    if not isinstance(s, str):",
+    "        print('TEST|' + name + '|FAIL|Expected a str but got ' + type(s).__name__); return",
+    "    ws = s.split()",
+    "    if len(ws) != n:",
+    "        print('TEST|' + name + '|FAIL|Expected ' + str(n) + ' words but got ' + str(len(ws)) + ': ' + repr(s)); return",
+    "    for i in range(3, len(ws)):",
+    "        key = (ws[i-3], ws[i-2], ws[i-1])",
+    "        if key in d and ws[i] not in d[key]:",
+    "            print('TEST|' + name + '|FAIL|' + repr(ws[i]) + ' never came after ' + repr(key) + ' in the text'); return",
+    "    print('TEST|' + name + '|PASS')",
+    "try:",
+    "    _tw = " + expected3(TWINKLE),
+    "    _valid(_tw, mimic_text(_tw, 20), 20, '20 words from the Twinkle dictionary, every word allowed to follow the three before it')",
+    "except Exception as e:",
+    "    print('TEST|20 words from the Twinkle dictionary|FAIL|Your function raised an error: ' + repr(e))",
+    "try:",
+    "    _outs = set(mimic_text(_tw, 8) for _i in range(10))",
+    "    if len(_outs) > 1: print('TEST|different runs start from different places|PASS')",
+    "    else: print('TEST|different runs start from different places|FAIL|10 runs all gave the same text. Start from a random key.')",
+    "except Exception as e:",
+    "    print('TEST|different runs start from different places|FAIL|Your function raised an error: ' + repr(e))",
+    "try:",
+    "    _one = {('', '', ''): ['a'], ('', '', 'a'): ['b'], ('', 'a', 'b'): ['c'], ('a', 'b', 'c'): ['d']}",
+    "    _s = mimic_text(_one, 12)",
+    "    if isinstance(_s, str) and len(_s.split()) == 12: print('TEST|a dictionary with a dead end still gives 12 words (start again from a random key)|PASS')",
+    "    else: print('TEST|a dictionary with a dead end still gives 12 words|FAIL|got ' + repr(_s))",
+    "except Exception as e:",
+    "    print('TEST|a dictionary with a dead end still gives 12 words|FAIL|Your function raised an error: ' + repr(e) + '. When the context is not in the dictionary, pick a new random key.')"
+  ].join('\n'), 'from lazylit import make_dictionary, random_element\n');
+
+  setupTask('p3', STARTER_P3, () => [
+    "def _t(name, got, want):",
+    "    if got == want: print('TEST|' + name + '|PASS')",
+    "    else: print('TEST|' + name + '|FAIL|got ' + repr(got) + ', expected ' + repr(want))",
+    "try:",
+    "    _t(\"clean_word('Spain.') is 'spain'\", clean_word('Spain.'), 'spain')",
+    "    _t(\"clean_word('beach,') is 'beach'\", clean_word('beach,'), 'beach')",
+    "    _t(\"clean_word('waterfall?') is 'waterfall'\", clean_word('waterfall?'), 'waterfall')",
+    "    _t(\"clean_word('It') is 'it'\", clean_word('It'), 'it')",
+    "except Exception as e:",
+    "    print('TEST|clean_word|FAIL|Your function raised an error: ' + repr(e))",
+    "try:",
+    "    with open('rain.txt') as _f:",
+    "        _got = make_dictionary(_f)",
+    "    _exp = " + ngramLiteral(makeNgram(cleanWords(RAIN), 3)),
+    "    if _got == _exp: print('TEST|the rain in Spain text gives the dictionary from the slide|PASS')",
+    "    else:",
+    "        _wrong = [k for k in _exp if k not in _got or _got[k] != _exp[k]]",
+    "        _extra = [k for k in _got if k not in _exp]",
+    "        print('TEST|the rain in Spain text gives the dictionary from the slide|FAIL|' + ('first difference at key ' + repr(_wrong[0]) if _wrong else 'unexpected key ' + repr(_extra[0])))",
+    "except Exception as e:",
+    "    print('TEST|the rain in Spain text gives the dictionary from the slide|FAIL|Your function raised an error: ' + repr(e))"
+  ].join('\n'), 'from lazylit import mimic_text, random_element\n');
+
+  // ---------- Load corpus files from the viewer's computer ----------
+  $('corpus-files').addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    let done = 0;
+    files.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const t = String(reader.result || '');
+        const n = splitWords(t).length;
+        if (n >= 4) {
+          const key = 'file:' + f.name;
+          corpora[key] = { name: f.name.replace(/\.txt$/i, '') + ' (' + n.toLocaleString() + ' words)', text: t };
+          exposeFile(f.name, t);
+        }
+        done++;
+        if (done === files.length) {
+          refreshCorpusSelects();
+          document.querySelectorAll('label.load').forEach((lab) => { lab.textContent = 'Loaded ' + files.length + ' file' + (files.length === 1 ? '' : 's'); setTimeout(() => { lab.textContent = 'Load more files'; }, 4000); });
+        }
+      };
+      reader.readAsText(f);
+    });
+    e.target.value = '';
+  });
+
+
+  // Start
+  goFromHash();
+  loadSideFile('alice.txt', 'alice', 'Alice in Wonderland');
+  loadSideFile('shakespeare.txt', 'shakespeare', "A Midsummer Night's Dream");
+})();
+</script>
+
+</body>
+</html>

@@ -349,6 +349,28 @@ It rarely rains on the beach, where the sand is dry.</pre>
   <div class="tests" id="p1-tests"></div>
 </section>
 
+<!-- 4b. Generate with 3-gram keys -->
+<section class="slide" id="s-gen3" hidden>
+  <h2>Generating from the 3-gram dictionary</h2>
+  <div class="toolbar">
+    <label class="inline">Text <select id="g3-corpus"></select></label>
+    <button class="btn warm" id="g3-pick">Pick next word</button>
+    <button class="btn secondary" id="g3-reset">Start again</button>
+  </div>
+  <div class="two">
+    <div>
+      <h3>word_dict[<code id="g3-ctx">('', '', '')</code>]</h3>
+      <p class="muted" style="margin-bottom:6px" id="g3-hint"></p>
+      <div class="dict" id="g3-dict"></div>
+    </div>
+    <div>
+      <h3>story so far <span class="muted mono" id="g3-count">(0)</span></h3>
+      <div class="output" id="g3-output"><span class="muted">Press Pick next word.</span></div>
+      <p class="muted" style="margin-top:10px">The highlighted words at the end of the story are the context. They are the key for the next lookup, so each new word has to fit all three. When a key is not in the dictionary, the program starts again from a random key.</p>
+    </div>
+  </div>
+</section>
+
 <!-- 5. Task 1b -->
 <section class="slide" id="s-task2" hidden>
   <h2>Task 1: mimic_text with 3-gram keys</h2>
@@ -405,7 +427,7 @@ It rarely rains on the beach, where the sand is dry.</pre>
     <div class="right">
       <button class="arrow" id="nav-prev" aria-label="Previous slide">&#9664;</button>
       <button class="arrow" id="nav-next" aria-label="Next slide">&#9654;</button>
-      <span class="counter" id="counter">1 / 10</span>
+      <span class="counter" id="counter">1 / 11</span>
     </div>
   </div>
 </footer>
@@ -422,7 +444,7 @@ It rarely rains on the beach, where the sand is dry.</pre>
     rutwa: { name: 'Three sentences', small: true, text: 'Rutwa played soccer.\nRutwa walked fast.\nRutwa said so.' },
     sword: { name: 'The sword sentence', small: true, text: 'Did you get the sword from the old man on top of the waterfall?' },
     twinkle: { name: 'Twinkle, Twinkle', small: true, text: TWINKLE },
-    rain: { name: 'The rain in Spain', small: true, text: RAIN }
+    rain: { name: 'The rain in Spain (no punctuation)', small: true, text: RAIN_CLEAN }
   };
   function loadSideFile(path, key, name) {
     if (typeof fetch !== 'function') return;
@@ -521,7 +543,7 @@ It rarely rains on the beach, where the sand is dry.</pre>
 
   // ---------- Slides ----------
   const slides = Array.from(document.querySelectorAll('.slide'));
-  const titles = ['Title', 'More context', '3-gram keys', 'Check yourself', 'Tuples as keys', 'setdefault', 'Task 1: make_dictionary', 'Task 1: mimic_text', 'Task 2: punctuation', 'Extra practice'];
+  const titles = ['Title', 'More context', '3-gram keys', 'Check yourself', 'Tuples as keys', 'setdefault', 'Task 1: make_dictionary', 'Generating', 'Task 1: mimic_text', 'Task 2: punctuation', 'Extra practice'];
   let idx = 0;
   function go(i, fromHash) {
     idx = Math.max(0, Math.min(slides.length - 1, i));
@@ -668,6 +690,58 @@ It rarely rains on the beach, where the sand is dry.</pre>
     $('q3-next').addEventListener('click', pick);
     reveal.addEventListener('click', () => { const d = $('q3-dict'); d.hidden = !d.hidden; renderNgramDict(d, dict); });
     pick();
+  })();
+
+
+  // ---------- 4b. Generate from the 3-gram dictionary, one word at a time ----------
+  (function gen3() {
+    const sel = $('g3-corpus'), ctxEl = $('g3-ctx'), dictEl = $('g3-dict'), out = $('g3-output'), count = $('g3-count'), hint = $('g3-hint');
+    let dict = new Map(), keys = [], ctx = [], words = [], busy = false, restarted = false;
+    const SHOW_ALL = 60;
+    function label(c) { return '(' + c.map((x) => "'" + x + "'").join(', ') + ')'; }
+    function renderDictView(pickIndex) {
+      const k = ctx.join(SEP);
+      const view = dict.size <= SHOW_ALL ? dict : new Map([[k, dict.get(k) || []]]);
+      renderNgramDict(dictEl, view, { hotKey: k, pickIndex: pickIndex });
+      ctxEl.textContent = label(ctx);
+      hint.textContent = restarted
+        ? 'That key was not in the dictionary (nothing ever followed those three words), so a new random key was chosen.'
+        : (dict.size <= SHOW_ALL ? 'The whole dictionary. The highlighted row is the key being looked up; one word from its list is picked at random.' : 'This dictionary has ' + dict.size.toLocaleString() + ' keys, so only the entry being looked up is shown. One word from its list is picked at random.');
+    }
+    function renderOut() {
+      if (!words.length) { out.innerHTML = '<span class="muted">Press Pick next word.</span>'; }
+      else out.innerHTML = words.map((w, j) => (j >= words.length - 3 ? '<span class="last">' : '<span>') + esc(w) + '</span>').join(' ');
+      count.textContent = '(' + words.length + ')';
+    }
+    function reset() {
+      const c = corpora[sel.value] || corpora.rain;
+      dict = makeNgram(splitWords(c.text), 3); keys = Array.from(dict.keys());
+      ctx = choice(keys).split(SEP); words = []; busy = false; restarted = false;
+      renderDictView(-1); renderOut();
+    }
+    function pick() {
+      if (busy) return;
+      restarted = false;
+      if (!dict.has(ctx.join(SEP))) { ctx = choice(keys).split(SEP); restarted = true; renderDictView(-1); }
+      const list = dict.get(ctx.join(SEP));
+      busy = true;
+      const finalJ = Math.floor(Math.random() * list.length);
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const finish = () => {
+        renderDictView(finalJ);
+        setTimeout(() => {
+          const w = list[finalJ]; words.push(w); ctx = ctx.slice(1).concat([w]); restarted = false;
+          renderOut(); renderDictView(-1); busy = false;
+        }, 500);
+      };
+      if (reduce || list.length === 1) { finish(); return; }
+      let k = 0; const ticks = Math.min(10, list.length * 2 + 2);
+      const t = setInterval(() => { renderDictView(k % list.length); k++; if (k >= ticks) { clearInterval(t); finish(); } }, 90);
+    }
+    $('g3-pick').addEventListener('click', pick);
+    $('g3-reset').addEventListener('click', reset);
+    registerCorpusSelect(sel, 'rain', reset);
+    reset();
   })();
 
   // ---------- Files that student Python can open() ----------
